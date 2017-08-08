@@ -1,0 +1,7 @@
+{% block content %}
+
+<h1>User Profile </h1>
+<p>Welcome back, User: {{user}}</p>
+<a href="{% url 'logout' %}">Click here to log out.</a>
+
+{% endblock content %}
