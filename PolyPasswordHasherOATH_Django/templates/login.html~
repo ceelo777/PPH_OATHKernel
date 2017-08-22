@@ -1,11 +1,9 @@
-{#{% extends 'base.html' %}#}
 {% block title %}Login{% endblock %}
 
 {% block content %}
     <div id="content-container" class="container p-none">
         <div class="lgn-container col-lg-8">
-            <form id="login-form" method="post" 
-                  action="login/">
+            <form id="login-form" method="post"  action="/pph_login/">
                 {% csrf_token %}
                 <table class="table">
                     <tr>
@@ -18,11 +16,20 @@
                         <td><input id="id_password" name="password" 
                                    type="password" class="form-control"></td>
                     </tr>
+		    <tr>
+                        <td><label >Challenge</label></td>
+                        <td><label id="id_challenge" name="oath_challenge"
+                                   class="form-control">{{ challenge }}</td>
+                    </tr>
+                    <tr>
+                        <td><label for="id_response">Response</label></td>
+                        <td><input id="id_response" name="oath_resp" 
+                                   type="password" class="form-control"></td>
+                    </tr>
                 </table>
                 {% if form.errors %}
                     <p class=" label label-danger">
-                        Your username and password didn't match. 
-                        Please try again.
+                        You entered information incorrectly.                        
                     </p>
                 {% endif %}
 

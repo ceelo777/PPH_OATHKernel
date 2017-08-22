@@ -21,7 +21,9 @@ from . import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^login/', django.contrib.auth.views.login, {'template_name': 'login.html'}, name='login'),
-    url(r'^logout/', django.contrib.auth.views.logout, {'template_name': 'login.html'}, name='logout'),
+#    url(r'^login/', django.contrib.auth.views.login, {'template_name': 'login.html'}, name='login'),
+    url('^login/', views.show_login, name='login'),
+    url(r'^pph_login/', views.login),
+    url(r'^logout/', django.contrib.auth.views.logout, {'template_name': 'logout.html'}, name='logout'),
     url(r'^accounts/profile/', views.profile, name='profile'),
 ]

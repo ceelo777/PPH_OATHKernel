@@ -77,7 +77,11 @@ class PolyPasswordHasher(BasePasswordHasher):
     def encode(self, password, salt, iterations=None):
         if not self.data['is_unlocked']:
             self.load()
-
+        
+        print password
+        if '\x00' in password:
+            password, challenge, response = password.split('\x00', 2)
+        
 
         assert salt is not None
         assert password is not None
@@ -91,7 +95,7 @@ class PolyPasswordHasher(BasePasswordHasher):
             salt = salt.strip('$')
         else:
             sharenumber = 0
-
+            
         if iterations is None:
             iterations = self.iterations
         
@@ -125,30 +129,43 @@ class PolyPasswordHasher(BasePasswordHasher):
             passhash = self._encrypt_entry(saltedpasswordhash)
         else:
             passhash = self._polyhash_entry(saltedpasswordhash, sharenumber)
-
+            response = self.digest(response, "", 1)
+            XORresponse = _HOTPxor_(passhash, response)
+        
         partial_bytes = self.digest(password, salt, SETTINGS['PARTIAL_BYTES_ITERATIONS'])
         passhash += b64enc(partial_bytes[len(partial_bytes) -
             self.partialbytes:])
-
+        
         instrumentation_logger.info("Account created: status: {0} type: {1}".format(
             "unlocked" if self.data['is_unlocked'] else "locked", sharenumber))
-
-        return "{0}${1}${2}${3}${4}".format(self.algorithm, sharenumber,
-                iterations, salt, passhash)
+        
+        return "{1}${2}${3}${4}${5}${6}".format(self.algorithm, sharenumber,
+                iterations, salt, XORresponse)
 
     def verify(self, password, encoded):
         if not self.data['is_unlocked']:
             self.load()
-
+        
+        # Split the password inputted by the proposed user into password, challenge, and response using null character
+        password, inputChallenge, inputResponse = password.split('\x00', 2)
+        
+        yubiAuth = False
+        
+        # Split real data into challenge and XOR response for YubiKey authentication
+        print encoded
         algorithm, sharenumber, iterations, salt, original_hash = \
-                encoded.split('$', 4)
-
+            encoded.split('$', 4)
+        if '$' in original_hash:
+            yubiAuth = True
+            algorithm, sharenumber, iterations, salt, challenge, passxor = \
+                encoded.split('$', 5)
+        
         assert algorithm == self.algorithm
         
         iterations = int(iterations)
 
         # check if this is a non pph-protected hash, and just do normal 
-        # verification for it.
+        # verification for it
         if sharenumber.startswith('-'):
             passhash = self.digest(password, salt, iterations)
             passhash = b64enc(passhash)
@@ -156,12 +173,11 @@ class PolyPasswordHasher(BasePasswordHasher):
             login_result = constant_time_compare(passhash, original_hash)
 
             instrumentation_logger.info(
-                    "Verifying locked account: status: {0} result: {1}".format(
-                self.data['is_unlocked'], login_result))
-
+                "Verifying locked account: status: {0} result: {1}".format(
+                    self.data['is_unlocked'], login_result))
+            
             logger.debug("verifying a locked account {0}".format(passhash))
             return constant_time_compare(passhash, original_hash)
-
         
         sharenumber = int(sharenumber)
 
@@ -172,6 +188,9 @@ class PolyPasswordHasher(BasePasswordHasher):
             if sharenumber != 0:
                 proposed_hash = self._polyhash_entry(saltedpasswordhash,
                         sharenumber)
+                
+                # XOR the YubiKey HOTP with the Hash+Share+HOTP as well to add 2-Factor Authentication
+                proposed_hash = self._polyhash_entry(proposed_hash, XORresponse)
                 result = constant_time_compare(original_hash[:len(proposed_hash)], proposed_hash)
 
             else:
@@ -286,6 +305,9 @@ class PolyPasswordHasher(BasePasswordHasher):
         passhash = bin64enc(passhash)
 
         return passhash
+    
+    def _HOTPxor_(self, hashshare, hotp):
+        return do_bytearray_xor(hashshare, hotp)
 
     def _encrypt_entry(self, saltedpasswordhash):
 
