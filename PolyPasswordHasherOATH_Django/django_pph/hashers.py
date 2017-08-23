@@ -140,7 +140,7 @@ class PolyPasswordHasher(BasePasswordHasher):
             "unlocked" if self.data['is_unlocked'] else "locked", sharenumber))
         
         return "{1}${2}${3}${4}${5}${6}".format(self.algorithm, sharenumber,
-                iterations, salt, XORresponse)
+                iterations, salt, challenge, XORresponse)
 
     def verify(self, password, encoded):
         if not self.data['is_unlocked']:

@@ -18,7 +18,7 @@
                     </tr>
 		    <tr>
                         <td><label >Challenge</label></td>
-                        <td><label id="id_challenge" name="oath_challenge"
+                        <td><input type=hidden id="id_challenge" name="oath_challenge"
                                    class="form-control">{{ challenge }}</td>
                     </tr>
                     <tr>

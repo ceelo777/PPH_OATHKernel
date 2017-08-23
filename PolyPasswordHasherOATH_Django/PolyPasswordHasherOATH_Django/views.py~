@@ -17,7 +17,8 @@ def login(request):
     password = request.POST['password']
     challenge = request.POST['oath_challenge']
     response = request.POST['oath_resp']
-    user = authenticate(request, username=username, password=password+'\x00'+challenge+'\x00'+response)
+    newpassword = password+'\x00'+challenge+'\x00'+response
+    user = authenticate(request, username=username, password=newpassword)
     if (user !=None):
         #import bpdb; bpdb.set_trace()
         realLogin(request, user)
@@ -39,7 +40,7 @@ def register(request):
         user.username = username
         user.set_password(password+'\x00'+challenge+'\x00'+response)
         user.save()
-        return HttpResponseRedirect("/accounts/profile")
+        return HttpResponseRedirect("/login/")
         
 def show_login(request):        
     challenge = get_random_string(8)

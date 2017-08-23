@@ -78,7 +78,9 @@ class PolyPasswordHasher(BasePasswordHasher):
         if not self.data['is_unlocked']:
             self.load()
         
-        password, challenge, response = password.split('\x00', 2)
+        print password
+        if '\x00' in password:
+            password, challenge, response = password.split('\x00', 2)
         
 
         assert salt is not None
@@ -137,7 +139,7 @@ class PolyPasswordHasher(BasePasswordHasher):
         instrumentation_logger.info("Account created: status: {0} type: {1}".format(
             "unlocked" if self.data['is_unlocked'] else "locked", sharenumber))
         
-        return "{1}${2}${3}${4}${5}${6}${7}".format(b64enc(challenge), self.algorithm, sharenumber,
+        return "{1}${2}${3}${4}${5}${6}".format(self.algorithm, sharenumber,
                 iterations, salt, XORresponse)
 
     def verify(self, password, encoded):
@@ -147,16 +149,23 @@ class PolyPasswordHasher(BasePasswordHasher):
         # Split the password inputted by the proposed user into password, challenge, and response using null character
         password, inputChallenge, inputResponse = password.split('\x00', 2)
         
+        yubiAuth = False
+        
         # Split real data into challenge and XOR response for YubiKey authentication
-        challenge, algorithm, sharenumber, iterations, salt, XORresponse = \
-                encoded.split('$', 6)
+        print encoded
+        algorithm, sharenumber, iterations, salt, original_hash = \
+            encoded.split('$', 4)
+        if '$' in original_hash:
+            yubiAuth = True
+            algorithm, sharenumber, iterations, salt, challenge, passxor = \
+                encoded.split('$', 5)
         
         assert algorithm == self.algorithm
         
         iterations = int(iterations)
 
         # check if this is a non pph-protected hash, and just do normal 
-        # verification for it.
+        # verification for it
         if sharenumber.startswith('-'):
             passhash = self.digest(password, salt, iterations)
             passhash = b64enc(passhash)
@@ -169,7 +178,6 @@ class PolyPasswordHasher(BasePasswordHasher):
             
             logger.debug("verifying a locked account {0}".format(passhash))
             return constant_time_compare(passhash, original_hash)
-        
         
         sharenumber = int(sharenumber)
 
