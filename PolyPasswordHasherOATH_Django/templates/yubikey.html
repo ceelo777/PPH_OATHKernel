@@ -1,15 +1,14 @@
-{% block title %}YubiKey Authentication For: {{ username }}{% endblock %}
 
 {% block content %}
     <div id="content-container" class="container p-none">
         <div class="lgn-container col-lg-8">
-            <form id="login-form" method="post"  action="/yubikeyAuth/">
+            <form id="login-form" method="post"  action="/yubiAuth/">
                 {% csrf_token %}
                 <table class="table">
 		  <tr>
                     <td><label>Username</label></td>
-                    <td><input type=hidden id="id_challenge" name="oath_challenge"
-                               class="form-control"><strong>{{ username }}</strong></td>
+                    <td><input type=hidden id="id_username" name="username"
+                               class="form-control" value="{{ username }}"/><strong>{{ username }}</strong></td>
                   </tr>
 		  <tr>
                     <td><label for="id_password">Password</label></td>
@@ -19,7 +18,7 @@
 		  <tr>
                     <td><label>Challenge</label></td>
                     <td><input type=hidden id="id_challenge" name="oath_challenge"
-                               class="form-control">{{ challenge }}</td>
+                               class="form-control" value="{{ challenge }}"/><strong>{{ challenge }}</strong></td>
                   </tr>
                   <tr>
                     <td><label for="id_response">Response</label></td>

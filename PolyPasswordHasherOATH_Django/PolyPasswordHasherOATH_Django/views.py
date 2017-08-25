@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as realLogin
 from django.contrib.auth.models import User
+from django.contrib.auth import hashers
 
 def profile(request):
     user = django.contrib.auth.get_user(request)
@@ -14,35 +15,41 @@ def profile(request):
 def login(request):
     #import pdb; pdb.set_trace()
     username = request.POST['username']
-    #password = request.POST['password']
-    #challenge = request.POST['oath_challenge']
-    #response = request.POST['oath_resp']
-    #user = authenticate(request, username=username)#, password=password)#+'\x00'+challenge+'\x00'+response)
     try:
-        User.objects.get(username=username)
-        return render(request, 'yubikey.html', {"username": username})
-    #return HttpResponseRedirect("/yubiAuth/")
+        user = User.objects.get(username=username)
+        algorithm, sharenumber, iterations, salt, challenge, XORresponse = user.password.split('$', 5)
+        return render(request, 'yubikey.html', {"username": username, "challenge": challenge} )
     except:
         return HttpResponseRedirect("/login/")
-    
-    if (user !=None):
-        #import bpdb; bpdb.set_trace()
-        #realLogin(request, user)
-        #return HttpResponseRedirect("/accounts/profile/")
-        return HttpResponseRedirect("/yubiAuth/")
-    else:
-        return HttpResponseRedirect("/login/")
+
+def deleteAccount(request):
+    account = request.POST['delete']
+    try:
+        user = User.objects.get(username=account)
+        user.delete()
+        return HttpResponseRedirect("/accounts/profile")
+    except:
+        return HttpResponseRedirect("/accounts/profile")
 
 def yubikeyAuth(request):
     username = request.POST['username']
     password = request.POST['password']
+    challenge = request.POST['oath_challenge']
     response = request.POST['oath_resp']
+    pph = hashers.get_hasher()
+    user = authenticate(username=username, password=password+'\x00'+challenge+'\x00'+response)
+    if user is not None:
+        realLogin(request, user)
+    else:
+        return HttpResponseRedirect("/login/")
+    return HttpResponseRedirect("/accounts/profile")
+        
 
 def register(request):
     username = request.POST['username']
-    password = request.POST['password']
-    challenge = request.POST['oath_challenge']
-    response = request.POST['oath_resp']
+    password = request.POST['password'].encode("ascii")
+    challenge = request.POST['oath_challenge'].encode("ascii")
+    response = request.POST['oath_resp'].encode("ascii")
     # Check if username already exists
     try:
         user = User.objects.get(username=username)
@@ -50,7 +57,14 @@ def register(request):
     except:
         user = User()
         user.username = username
-        user.set_password(password+'\x00'+challenge+'\x00'+response)
+        salt = get_random_string(8)
+        pph = hashers.get_hasher()
+#        if (account == 'shielded'):
+#       elif (account == 'protector'):
+#    if (authentication == 'yubikey'):
+        password = password+'\x00'+challenge+'\x00'+response
+#elif (authentication == 'normal'):
+        user.password = pph.encode(password, "$"+salt)
         user.save()
         return HttpResponseRedirect("/login/")
         

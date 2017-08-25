@@ -15,5 +15,28 @@
 </ol>
 {% endif %}
 <a href="{% url 'logout' %}">Click here to log out.</a>
+<div id="content-container" class="container p-none">
+        <div class="lgn-container col-lg-8">
+            <form id="login-form" method="post"  action="/deleteAccount/">
+                {% csrf_token %}
+                <table class="table">
+                  <tr>
+                    <td><label for="delete">Delete Account</label></td>
+                    <td><input id="delete" name="delete"
+                               type="text" class="form-control"></td>
+                  </tr>
+                </table>
+                {% if form.errors %}
+                    <p class=" label label-danger">
+                        You entered information incorrectly.
+                    </p>
+                {% endif %}
+
+                <input type="submit" value="Enter"
+                       class="btn btn-primary pull-right" />
+                <input type="hidden" name="next" value="{{ next }}" />
+            </form>
+        </div>
+    </div>
 
 {% endblock content %}

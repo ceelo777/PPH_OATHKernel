@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^register/', views.show_register),
     url(r'^pph_register/', views.register),
     url(r'^login/', views.show_login, name='login'),
+    url(r'^yubiAuth/', views.yubikeyAuth),
     url(r'^pph_login/', views.login),
     url(r'^logout/', django.contrib.auth.views.logout, {'template_name': 'logout.html'}, name='logout'),
     url(r'^accounts/profile/', views.profile, name='profile'),

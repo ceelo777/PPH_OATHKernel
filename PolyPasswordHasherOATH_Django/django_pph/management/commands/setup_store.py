@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 algorithm, iterations, salt, passhash = user.password.split('$')
             except:
                 if user.password.startswith("pph$-0$"):
-                    algoritm = 'pbkdf2_sha256'
+                    algorithm = 'pbkdf2_sha256'
                     user_info = user.password.split("$")
                     iterations = user_info[2]
                     salt = user_info[3]

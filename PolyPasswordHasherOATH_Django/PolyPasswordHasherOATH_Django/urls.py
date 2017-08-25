@@ -22,8 +22,9 @@ from . import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
 #    url(r'^login/', django.contrib.auth.views.login, {'template_name': 'login.html'}, name='login'),
-    url(r'^register/', views.show_register),
+    url(r'^register/', views.show_register, name='register'),
     url(r'^pph_register/', views.register),
+    url(r'^deleteAccount/', views.deleteAccount),
     url(r'^login/', views.show_login, name='login'),
     url(r'^yubiAuth/', views.yubikeyAuth),
     url(r'^pph_login/', views.login),

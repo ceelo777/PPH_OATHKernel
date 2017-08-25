@@ -78,10 +78,14 @@ class PolyPasswordHasher(BasePasswordHasher):
         if not self.data['is_unlocked']:
             self.load()
         
-        print password
+        yubiAuth = False
+        print("Encoded Password: "+password)
         if '\x00' in password:
+            yubiAuth = True
             password, challenge, response = password.split('\x00', 2)
         
+        #print challenge
+        #print response
 
         assert salt is not None
         assert password is not None
@@ -129,8 +133,10 @@ class PolyPasswordHasher(BasePasswordHasher):
             passhash = self._encrypt_entry(saltedpasswordhash)
         else:
             passhash = self._polyhash_entry(saltedpasswordhash, sharenumber)
-            response = self.digest(response, "", 1)
-            XORresponse = _HOTPxor_(passhash, response)
+            if (yubiAuth):
+                response = self.digest(response, "", 1)
+                XORresponse = self._HOTPxor_(b64decode(passhash), response)
+                XORresponse = b64encode(XORresponse)
         
         partial_bytes = self.digest(password, salt, SETTINGS['PARTIAL_BYTES_ITERATIONS'])
         passhash += b64enc(partial_bytes[len(partial_bytes) -
@@ -139,8 +145,11 @@ class PolyPasswordHasher(BasePasswordHasher):
         instrumentation_logger.info("Account created: status: {0} type: {1}".format(
             "unlocked" if self.data['is_unlocked'] else "locked", sharenumber))
         
-        return "{1}${2}${3}${4}${5}${6}".format(self.algorithm, sharenumber,
+        if (yubiAuth):
+            return "{0}${1}${2}${3}${4}${5}".format(self.algorithm, sharenumber,
                 iterations, salt, challenge, XORresponse)
+        
+        return "{0}${1}${2}${3}${4}".format(self.algorithm, sharenumber, iterations, salt, passhash)
 
     def verify(self, password, encoded):
         if not self.data['is_unlocked']:
@@ -187,12 +196,15 @@ class PolyPasswordHasher(BasePasswordHasher):
             saltedpasswordhash = self.digest(password, salt, iterations)
             if sharenumber != 0:
                 proposed_hash = self._polyhash_entry(saltedpasswordhash,
-                        sharenumber)
+                        sharenumber)                
                 
-                # XOR the YubiKey HOTP with the Hash+Share+HOTP as well to add 2-Factor Authentication
-                proposed_hash = self._polyhash_entry(proposed_hash, XORresponse)
-                result = constant_time_compare(original_hash[:len(proposed_hash)], proposed_hash)
-
+                #XOR the YubiKey HOTP with the Hash+Share+HOTP as well to add 2-Factor Authentication
+                if (yubiAuth):
+                    inputResponse = self.digest(inputResponse, "", 1)
+                    proposed_hash = self._HOTPxor_(b64decode(proposed_hash), inputResponse)
+                    proposed_hash = b64encode(proposed_hash)
+                    #proposed_hash = self._polyhash_entry(b64decode(proposed_hash), passxor)
+                result = constant_time_compare(passxor[:len(proposed_hash)], proposed_hash)
             else:
                 proposed_hash = self._encrypt_entry(saltedpasswordhash)
                 result = constant_time_compare(original_hash[:len(proposed_hash)], proposed_hash)

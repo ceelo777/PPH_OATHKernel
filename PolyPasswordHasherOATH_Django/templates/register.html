@@ -18,8 +18,8 @@
                     </tr>
 		    <tr>
                         <td><label >Challenge</label></td>
-                        <td><input type=hidden id="id_challenge" name="oath_challenge"
-                                   class="form-control">{{ challenge }}</td>
+                        <td><input type=hidden iid="id_challenge" name="oath_challenge"
+                                   class="form-control" value="{{challenge}}"/><strong>{{challenge}}</strong></td>
 		    </tr>
                     <tr>
                         <td><label for="id_response">Response</label></td>
@@ -39,4 +39,5 @@
             </form>
         </div>
     </div>
+    <a href="{% url 'login' %}">Click here to log in.</a>
 {% endblock content %}
