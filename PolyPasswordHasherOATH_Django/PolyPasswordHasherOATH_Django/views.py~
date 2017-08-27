@@ -50,8 +50,6 @@ def register(request):
     password = request.POST['password'].encode("ascii")
     challenge = request.POST['oath_challenge'].encode("ascii")
     response = request.POST['oath_resp'].encode("ascii")
-    account = request.POST['sp']
-    authentication = request.POST['yn']
     # Check if username already exists
     try:
         user = User.objects.get(username=username)

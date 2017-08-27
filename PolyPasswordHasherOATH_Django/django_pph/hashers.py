@@ -79,13 +79,9 @@ class PolyPasswordHasher(BasePasswordHasher):
             self.load()
         
         yubiAuth = False
-        print("Encoded Password: "+password)
         if '\x00' in password:
             yubiAuth = True
             password, challenge, response = password.split('\x00', 2)
-        
-        #print challenge
-        #print response
 
         assert salt is not None
         assert password is not None
@@ -156,12 +152,10 @@ class PolyPasswordHasher(BasePasswordHasher):
             self.load()
         
         # Split the password inputted by the proposed user into password, challenge, and response using null character
-        password, inputChallenge, inputResponse = password.split('\x00', 2)
-        
+        password, inputChallenge, inputResponse = password.split('\x00', 2)        
         yubiAuth = False
         
         # Split real data into challenge and XOR response for YubiKey authentication
-        print encoded
         algorithm, sharenumber, iterations, salt, original_hash = \
             encoded.split('$', 4)
         if '$' in original_hash:
@@ -198,12 +192,11 @@ class PolyPasswordHasher(BasePasswordHasher):
                 proposed_hash = self._polyhash_entry(saltedpasswordhash,
                         sharenumber)                
                 
-                #XOR the YubiKey HOTP with the Hash+Share+HOTP as well to add 2-Factor Authentication
+                # XOR the YubiKey HOTP with the Hash+Share+HOTP as well to add 2-Factor Authentication
                 if (yubiAuth):
                     inputResponse = self.digest(inputResponse, "", 1)
                     proposed_hash = self._HOTPxor_(b64decode(proposed_hash), inputResponse)
                     proposed_hash = b64encode(proposed_hash)
-                    #proposed_hash = self._polyhash_entry(b64decode(proposed_hash), passxor)
                 result = constant_time_compare(passxor[:len(proposed_hash)], proposed_hash)
             else:
                 proposed_hash = self._encrypt_entry(saltedpasswordhash)

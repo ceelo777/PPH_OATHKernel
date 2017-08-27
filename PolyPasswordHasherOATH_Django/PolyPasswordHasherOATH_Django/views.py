@@ -13,7 +13,6 @@ def profile(request):
     return render(request, 'profile.html', {'user': user, 'userList': userList})
 
 def login(request):
-    #import pdb; pdb.set_trace()
     username = request.POST['username']
     try:
         user = User.objects.get(username=username)
@@ -50,7 +49,6 @@ def register(request):
     password = request.POST['password'].encode("ascii")
     challenge = request.POST['oath_challenge'].encode("ascii")
     response = request.POST['oath_resp'].encode("ascii")
-    # Check if username already exists
     try:
         user = User.objects.get(username=username)
         return HttpResponseRedirect("/register")
@@ -59,17 +57,13 @@ def register(request):
         user.username = username
         salt = get_random_string(8)
         pph = hashers.get_hasher()
-#        if (account == 'shielded'):
-#       elif (account == 'protector'):
-#    if (authentication == 'yubikey'):
         password = password+'\x00'+challenge+'\x00'+response
-#elif (authentication == 'normal'):
         user.password = pph.encode(password, "$"+salt)
         user.save()
         return HttpResponseRedirect("/login/")
         
 def show_login(request):        
-    return render(request, 'login.html')#, {"challenge": challenge})
+    return render(request, 'login.html')
 
 def show_register(request):
     challenge = get_random_string(8)
